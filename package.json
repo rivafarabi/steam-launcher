@@ -1,0 +1,20 @@
+{
+  "name": "steam-launcher",
+  "version": "1.0.0",
+  "description": "Launch installed Steam games",
+  "main": "index.js",
+  "scripts": {
+    "build": "deckboard-kit --build",
+    "test": "mocha"
+  },
+  "author": "Riva Farabi",
+  "license": "MIT",
+  "dependencies": {
+    "deckboard-kit": "^0.1.11",
+    "fs-extra": "^8.1.0",
+    "opn": "^6.0.0"
+  },
+  "devDependencies": {
+    "mocha": "^6.1.4"
+  }
+}
