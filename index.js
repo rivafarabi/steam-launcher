@@ -2,6 +2,7 @@ const { Extension, INPUT_METHOD, PLATFORMS } = require('deckboard-kit');
 const fs = require('fs-extra');
 const path = require('path');
 const opn = require('opn');
+const { acfToJson } = require('./utils');
 
 class SteamLauncherExtension extends Extension {
 	constructor() {
@@ -12,51 +13,49 @@ class SteamLauncherExtension extends Extension {
 			{
 				label: 'Launch Game',
 				value: 'steam-launch-games',
-                icon: 'steam',
-                fontIcon: 'fab',
+				icon: 'steam',
+				fontIcon: 'fab',
 				color: '#171A21',
 				input: [
 					{
 						label: 'Game',
 						ref: 'appid',
 						type: INPUT_METHOD.INPUT_SELECT,
-						items: this.extractGameList()
+						items: this.getGameList()
 					}
 				]
 			}
 		];
 	}
 
-	extractGameList() {
-		const acfToJson = raw => {
-			return JSON.parse(
-				raw
-					.toString()
-					.split('LastUpdated')[0]
-					.replace(/AppState/g, '')
-					.replace(/"/g, '')
-					.replace(/\t\t/g, '": "')
-					.replace(/\n/g, '", "')
-					.replace(/\t/g, ' ')
-					.replace(/ " /g, ' "')
-					.replace('", "{", ', '{ ')
-					.slice(0, -3) + '}'
+	getGameList() {
+		let input = [];
+		const drives = ['C:', 'D:', 'E:', 'F:', 'G:'];
+		drives.forEach(drive => {
+			const steamPath = path.join(
+				drive,
+				'Program Files (x86)',
+				'Steam',
+				'steamapps'
 			);
-		};
-
-		const steamappsdir = fs.readdirSync(
-			'C:\\Program Files (x86)\\Steam\\steamapps'
-		);
-		const acfFiles = steamappsdir.filter(x => x.split('.').pop() === 'acf');
-		const gameArrays = acfFiles.map(x => {
-			const raw = fs.readFileSync(
-				path.join('C:\\Program Files (x86)\\Steam\\steamapps', x)
-			);
-			const { appid, name } = acfToJson(raw);
-			return { value: appid, label: name };
+			try {
+				const steamappsdir = fs.readdirSync(steamPath);
+				if (steamappsdir) {
+					const acfFiles = steamappsdir.filter(
+						x => x.split('.').pop() === 'acf'
+					);
+					const gamesObject = acfFiles.map(x => {
+						const raw = fs.readFileSync(path.join(steamPath, x));
+						const { appid, name } = acfToJson(raw);
+						return { value: appid, label: name };
+					});
+					input = [...input, ...gamesObject];
+				}
+			} catch (err) {
+				console.log('no Steam installation in the drive ' + drive);
+			}
 		});
-
-		return gameArrays;
+		return input;
 	}
 
 	execute(action, { appid }) {
