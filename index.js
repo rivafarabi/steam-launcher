@@ -1,4 +1,4 @@
-const { Extension, INPUT_METHOD, PLATFORMS } = require('deckboard-kit');
+const { Extension, INPUT_METHOD, PLATFORMS, log } = require('deckboard-kit');
 const fs = require('fs-extra');
 const path = require('path');
 const opn = require('opn');
@@ -9,6 +9,26 @@ class SteamLauncherExtension extends Extension {
 		super();
 		this.name = 'Steam Launcher';
 		this.platforms = [PLATFORMS.WINDOWS];
+		this.configs = {
+			steamPaths: {
+				type: 'array',
+				name: 'Paths',
+				descriptions: '',
+				value: [
+					path.join(
+						'C:',
+						'Program Files (x86)',
+						'Steam',
+						'steamapps'
+					),
+					path.join('D:', 'Program Files (x86)', 'Steam', 'steamapps')
+				]
+			}
+		};
+		this.initExtension();
+	}
+
+	initExtension() {
 		this.inputs = [
 			{
 				label: 'Launch Game',
@@ -30,14 +50,7 @@ class SteamLauncherExtension extends Extension {
 
 	getGameList() {
 		let input = [];
-		const drives = ['C:', 'D:', 'E:', 'F:', 'G:'];
-		drives.forEach(drive => {
-			const steamPath = path.join(
-				drive,
-				'Program Files (x86)',
-				'Steam',
-				'steamapps'
-			);
+		this.configs.steamPaths.value.forEach(steamPath => {
 			try {
 				const steamappsdir = fs.readdirSync(steamPath);
 				if (steamappsdir) {
@@ -52,10 +65,12 @@ class SteamLauncherExtension extends Extension {
 					input = [...input, ...gamesObject];
 				}
 			} catch (err) {
-				console.log('no Steam installation in the drive ' + drive);
+				log.error(
+					'no Steam installation in the directory ' + steamPath
+				);
 			}
 		});
-		return input;
+		return input.sort((a, b) => a.label - b.label);
 	}
 
 	execute(action, { appid }) {
