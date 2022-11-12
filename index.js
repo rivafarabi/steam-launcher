@@ -29,6 +29,14 @@ class SteamLauncherExtension extends Extension {
 	}
 
 	initExtension() {
+		this.setInputOptions();
+	}
+
+	update() {
+		this.setInputOptions();
+	}
+
+	setInputOptions() {
 		this.inputs = [
 			{
 				label: 'Launch Game',
